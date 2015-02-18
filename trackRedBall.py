@@ -1,4 +1,5 @@
 from cv2 import *
+import numpy as np
 
 color_tracker_window = "Color Tracker"
 
@@ -6,7 +7,7 @@ class ColorTracker:
 
     def __init__(self):
         cv.NamedWindow( color_tracker_window, 1 )
-        self.capture = cv.CaptureFromCAM(0)
+        self.capture = cv.CaptureFromCAM(1)
 
     def run(self):
         while True:
