@@ -1,4 +1,4 @@
-import cv2.cv as cv
+from cv2 import *
 
 color_tracker_window = "Color Tracker"
 
@@ -35,8 +35,8 @@ class ColorTracker:
             if(area > 100000):
                 #determine the x and y coordinates of the center of the object 
                 #we are tracking by dividing the 1, 0 and 0, 1 moments by the area 
-                x = cv.GetSpatialMoment(moments, 1, 0)/area
-                y = cv.GetSpatialMoment(moments, 0, 1)/area
+                x = int(float(cv.GetSpatialMoment(moments, 1, 0)/area))
+                y = int(float(cv.GetSpatialMoment(moments, 0, 1)/area))
 
                 #print 'x: ' + str(x) + ' y: ' + str(y) + ' area: ' + str(area) 
 
