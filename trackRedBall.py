@@ -45,13 +45,6 @@ class ColorTracker:
             hsv_img = cv.CreateImage(cv.GetSize(img), 8, 3)
             cv.CvtColor(img, hsv_img, cv.CV_BGR2HSV)
 
-            #limit all pixels that don't match our criteria, in this case we are  
-            #looking for purple but if you want you can adjust the first value in  
-            #both turples which is the hue range(120,140).  OpenCV uses 0-180 as  
-            #a hue range for the HSV color model 
-            lowerRed = cv.Scalar(0, 0, 150)
-            upperRed = cv.Scalar(0, 0, 255)
-
             thresholded_img =  cv.CreateImage(cv.GetSize(hsv_img), 8, 1)
 
             #Finds a red ball color! DO NOT DELETE THIS IT TOOK FOREVER TO GET THE RIGHT COLOR STUPID
@@ -70,8 +63,6 @@ class ColorTracker:
                 #we are tracking by dividing the 1, 0 and 0, 1 moments by the area 
                 x = int(cv.GetSpatialMoment(moments, 1, 0)/area)
                 y = int(cv.GetSpatialMoment(moments, 0, 1)/area)
-
-                #print 'x: ' + str(x) + ' y: ' + str(y) + ' area: ' + str(area) 
 
                 #create an overlay to mark the center of the tracked object 
                 overlay = cv.CreateImage(cv.GetSize(img), 8, 3)
