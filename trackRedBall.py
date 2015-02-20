@@ -79,6 +79,9 @@ class ColorTracker:
                 	print 'turn left'
                 else:
                 	print 'move forward'
+            
+            if(area < 1000):
+            	print 'Ball not in view!'
 
             #display the image  
             cv.ShowImage(color_tracker_window, img)
