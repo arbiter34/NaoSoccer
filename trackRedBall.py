@@ -2,10 +2,17 @@ from cv2 import *
 import cv2
 import numpy as np
 
+#NAO
+motionProxy	= None
+campProxy 	= None
+
 #Where the ball is on the screen.
 LEFT_SIDE 	= -1;
 CENTER 		= 0;
 RIGHT_SIDE 	= 1;
+UNKNOWN 	= None;
+
+BALL_LOCATION = None
 
 #This is the range that the ball needs to be within such that we consider it
 #centered on the screen. If the ball is within this range, the robot should 
@@ -15,9 +22,9 @@ RIGHT_SIDE 	= 1;
 CENTER_RANGE = 0.30;
 CAMERA_WIDTH = 0;
 
-color_tracker_window = "Color Tracker"
+color_tracker_window = "Track Red Ball"
 
-class ColorTracker:
+class BallTracker:
 
     def __init__(self):
         cv.NamedWindow( color_tracker_window, 1)
@@ -74,13 +81,19 @@ class ColorTracker:
                 cv.Merge(thresholded_img, None, None, None, img)
 
                 if(x < center_x_start):
-                	print 'turn right'
+                	BALL_LOCATION = LEFT_SIDE
+                	break
                 elif(x > center_x_end):
-                	print 'turn left'
+                	BALL_LOCATION = RIGHT_SIDE
+                	break
                 else:
-                	print 'move forward'
-            
+                	BALL_LOCATION = CENTER
+                	break
+
+                print BALL_LOCATION
+
             if(area < 1000):
+            	BALL_LOCATION = UNKNOWN
             	print 'Ball not in view!'
 
             #display the image  
@@ -90,5 +103,10 @@ class ColorTracker:
                 break
 
 if __name__=="__main__":
-    color_tracker = ColorTracker()
-    color_tracker.run()
+
+	#We will need a loop here that calls ball_tracker.run(), then calls a method
+	#to make the robot do movements based on the BALL_LOCATION results of ball_tracker.run()
+	#ball_tracier.run() will break out as soon as it finds the ball sets the BALL_LOCATION
+    ball_tracker = BallTracker()
+
+    ball_tracker.run()
