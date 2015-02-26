@@ -188,7 +188,10 @@ NEAR_FEET = False
 goaliePosition = None
 
 #Used to calculate the balls line of travel
-int x1, x2, y1, y2
+x1 = 0
+x2 = 0 
+y1 = 0
+y2 = 0
 firstPass = True
 
 color_tracker_window = "Track Red Ball Now"
@@ -217,7 +220,7 @@ PREPARING_KICK = 1
 BEING_GOALIE = 2
 
 
-IP = "169.254.238.191"
+IP = "169.254.16.208"
 PORT = 9559
 
 def setHeadAngle(headAngle):
@@ -229,21 +232,25 @@ def setHeadAngle(headAngle):
 
 def goalieKick():
     print 'Moving to Ball!'
+    global state
 
     state = BEING_GOALIE
 
-    while state == BEING_GOALIE and firstPass = False:
+    #If no state, do nothing and just show the camera
+    while state == None:
         ball_tracker.run()
 
-    if(goaliePosition == LEFT_SIDE):
-        print 'Dive Left!'
-    elif(goaliePosition == RIGHT_SIDE):
-        print 'Dive Right!'
-    elif(goaliePosition == CENTER)
-        print 'Gaurd Center!'
-    else
-        print '----No Ball Found----'
-    
+    while state == BEING_GOALIE:
+        ball_tracker.run()
+
+        if(goaliePosition == LEFT_SIDE):
+            print 'Dive Left!'
+        elif(goaliePosition == RIGHT_SIDE):
+            print 'Dive Right!'
+        elif(goaliePosition == CENTER):
+            print 'Gaurd Center!'
+
+    print 'no longer goalie'    
     #state = MOVING_TO_BALL
 
     while state == MOVING_TO_BALL:
@@ -368,18 +375,23 @@ class BallTracker:
             x = int(cv.GetSpatialMoment(moments, 1, 0) / area)
             y = int(cv.GetSpatialMoment(moments, 0, 1) / area)
 
+            print state
+
             if (state == BEING_GOALIE):
                 if (firstPass):
                     x1 = x;
                     y1 = y;
+                    firstPass = False
                 else:
                     #Get the x-intercept to calculate where the ball is going
                     xIntercept = None
                     x2 = x;
                     y2 = y;
+
+                    #print '(', x1, ',', y1, ') (', x2, ',', y2, ')'
                     try:
                         slope = (float(y2)-y1)/(float(x2)-x1)
-                    except ZeroDivisionError
+                    except ZeroDivisionError:
                         #Line is vertical
                         slope = None
 
@@ -398,9 +410,9 @@ class BallTracker:
                     else:
                         goaliePosition = None
 
-                    firstPass = False
+                    firstPass = True
 
-            elif(state != BEING_GOALIE):
+            else:
                 if(x < center_x_start):
                     BALL_LOCATION = LEFT_SIDE
                     LAST_LOCATION = LEFT_SIDE
@@ -447,7 +459,7 @@ if __name__ == "__main__":
     tts.setParameter("doubleVoice", 1)
     tts.setParameter("doubleVoiceLevel", 1)
 
-    videoClient = camProxy.subscribe("pyclient3", 1, 11, 5)
+    videoClient = camProxy.subscribe("pyclient5", 1, 11, 5)
     camProxy.setParam(18, 1)
 
     # We will need a loop here that calls ball_tracker.run(), then calls a method
@@ -464,7 +476,6 @@ if __name__ == "__main__":
     
     setHeadAngle(HEAD_FORWARD)
     goalieKick()
-
     postureProxy.goToPosture("Crouch", 0.5)
 
     camProxy.unsubscribe(videoClient)
