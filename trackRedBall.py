@@ -6,6 +6,9 @@ import Image
 import LeftKick
 import time
 
+# Hunters Kick = NAMES_LEFT, TIMES_LEFT, KEYS_LEFT
+# My Internet Found Kick = names, times, keys
+
 NAMES_LEFT = list()
 TIMES_LEFT = list()
 KEYS_LEFT = list()
@@ -165,6 +168,7 @@ keys.append([ [ -0.23466, [ 3, -0.86667, 0.00000], [ 3, 0.86667, 0.00000]], [ -0
 # move forward. So if the camera is 100x100 then the at x=50, the range of the
 # center would be from x=35 to x=65. Obviously this value will need some tweaking
 # and slowly get smaller as the robot moves towards the ball.
+
 CENTER_RANGE = 0.2
 LEFT_FOOT_RANGE = 0.2
 
@@ -179,8 +183,13 @@ LEFT_FOOT_ALIGNED = 2
 UNKNOWN = None
 BALL_LOCATION = None
 LAST_LOCATION = None
-
 NEAR_FEET = False
+
+goaliePosition = None
+
+#Used to calculate the balls line of travel
+int x1, x2, y1, y2
+firstPass = True
 
 color_tracker_window = "Track Red Ball Now"
 
@@ -205,9 +214,10 @@ CURRENT_HEAD = HEAD_FORWARD
 state = 0
 MOVING_TO_BALL = 0
 PREPARING_KICK = 1
+BEING_GOALIE = 2
 
 
-IP = "169.254.183.153"
+IP = "169.254.238.191"
 PORT = 9559
 
 def setHeadAngle(headAngle):
@@ -219,7 +229,22 @@ def setHeadAngle(headAngle):
 
 def goalieKick():
     print 'Moving to Ball!'
-    state = MOVING_TO_BALL
+
+    state = BEING_GOALIE
+
+    while state == BEING_GOALIE and firstPass = False:
+        ball_tracker.run()
+
+    if(goaliePosition == LEFT_SIDE):
+        print 'Dive Left!'
+    elif(goaliePosition == RIGHT_SIDE):
+        print 'Dive Right!'
+    elif(goaliePosition == CENTER)
+        print 'Gaurd Center!'
+    else
+        print '----No Ball Found----'
+    
+    #state = MOVING_TO_BALL
 
     while state == MOVING_TO_BALL:
         ball_tracker.run()
@@ -231,7 +256,7 @@ def goalieKick():
             if (BALL_LOCATION == CENTER):
                 motionProxy.moveTo(-.05, 0, 0)
                 state = PREPARING_KICK
-                tts.say("Any last words?. Naughty ball?")
+                #tts.say("Any last words?. Stupid ball!")
                 print 'Preparing Kick!'
         elif (BALL_LOCATION == UNKNOWN):
             if (LAST_LOCATION == LEFT_SIDE):
@@ -259,8 +284,8 @@ def goalieKick():
         if (BALL_LOCATION == CENTER): #Normnally BALL_LOCATION == LEFT_LEG_ALIGNED
             print 'Power Up Kick!'
             motionProxy.moveTo(MOVE_FORWARD_KICK, 0, 0)
-            tts.say("Commence ball kicking!")
-            time.sleep(2)
+            #tts.say("Commence ball kicking!")
+            time.sleep(1)
             motionProxy.angleInterpolationBezier(names, times, keys)
             break
         elif (BALL_LOCATION == LEFT_SIDE):
@@ -290,7 +315,8 @@ class BallTracker:
         # self.capture = cv.CaptureFromCAM(1)
 
     def run(self):
-        global BALL_LOCATION, LAST_LOCATION, MOVE_FORWARD, CURRENT_HEAD, NEAR_FEET, CENTER_RANGE
+        global BALL_LOCATION, LAST_LOCATION, MOVE_FORWARD, CURRENT_HEAD, NEAR_FEET, CENTER_RANGE, goaliePosition
+        global x1, x2, y1, y2, firstPass
 
         img = camProxy.getImageRemote(videoClient)
         im = Image.fromstring("RGB", (img[0], img[1]), img[6])
@@ -342,43 +368,69 @@ class BallTracker:
             x = int(cv.GetSpatialMoment(moments, 1, 0) / area)
             y = int(cv.GetSpatialMoment(moments, 0, 1) / area)
 
-            # create an overlay to mark the center of the tracked object
-            #overlay = cv.CreateImage(cv.GetSize(img), 8, 3)
-            
-            # shows the white dot on the object.
-            # cv.Circle(overlay, (x, y), 2, (255, 255, 255), 20)
-            # cv.Add(img, overlay, img)
+            if (state == BEING_GOALIE):
+                if (firstPass):
+                    x1 = x;
+                    y1 = y;
+                else:
+                    #Get the x-intercept to calculate where the ball is going
+                    xIntercept = None
+                    x2 = x;
+                    y2 = y;
+                    try:
+                        slope = (float(y2)-y1)/(float(x2)-x1)
+                    except ZeroDivisionError
+                        #Line is vertical
+                        slope = None
 
-            if(x < center_x_start):
-                BALL_LOCATION = LEFT_SIDE
-                LAST_LOCATION = LEFT_SIDE
-            elif(x > center_x_end):
-                BALL_LOCATION = RIGHT_SIDE
-                LAST_LOCATION = RIGHT_SIDE
-            else:
-                BALL_LOCATION = CENTER
-                LAST_LOCATION = CENTER
+                    yIntercept = None
+                    if(slope != None):
+                        yIntercept = y1 - slope * x1
 
-            if(CURRENT_HEAD == HEAD_DOWN):
-                if(y > (CAMERA_HEIGHT/2)):
-                    print '---Ball is near feet!---'
-                    CENTER_RANGE = .1
-                    NEAR_FEET = True
+                    if (slope != 0 and slope):
+                        xIntercept = float((CAMERA_HEIGHT - float(yIntercept))) / float(slope)
+                        if(xIntercept < center_x_start):
+                            goaliePosition = LEFT_SIDE
+                        elif(xIntercept > center_x_end):
+                            goaliePosition = RIGHT_SIDE
+                        else:
+                            goaliePosition = CENTER
+                    else:
+                        goaliePosition = None
 
-            if(y > (CAMERA_HEIGHT - (CAMERA_HEIGHT/3))):
-                print '----HEAD NOW DOWN----'
-                CURRENT_HEAD = HEAD_DOWN
-                MOVE_FORWARD = MOVE_FORWARD_SLOW
-                setHeadAngle(HEAD_DOWN)
-            #else:
-            #    print '----HEAD NOW FORWARD----'
-            #    setHeadAngle(HEAD_FORWARD)
-            #    MOVE_FORWARD = MOVE_FORWARD_FAST
+                    firstPass = False
 
-            #print 'x: ', x, ' left end:', left_foot_end
-            #if((x < left_foot_end and x > left_foot_start) and state == PREPARING_KICK):
-            #    print 'LEFT_FOOT_ALIGNED'
-            #    BALL_LOCATION = LEFT_FOOT_ALIGNED
+            elif(state != BEING_GOALIE):
+                if(x < center_x_start):
+                    BALL_LOCATION = LEFT_SIDE
+                    LAST_LOCATION = LEFT_SIDE
+                elif(x > center_x_end):
+                    BALL_LOCATION = RIGHT_SIDE
+                    LAST_LOCATION = RIGHT_SIDE
+                else:
+                    BALL_LOCATION = CENTER
+                    LAST_LOCATION = CENTER
+
+                if(CURRENT_HEAD == HEAD_DOWN):
+                    if(y > (CAMERA_HEIGHT/2)):
+                        print '---Ball is near feet!---'
+                        CENTER_RANGE = .1
+                        NEAR_FEET = True
+
+                if(y > (CAMERA_HEIGHT - (CAMERA_HEIGHT/3))):
+                    print '----HEAD NOW DOWN----'
+                    CURRENT_HEAD = HEAD_DOWN
+                    MOVE_FORWARD = MOVE_FORWARD_SLOW
+                    setHeadAngle(HEAD_DOWN)
+                #else:
+                #    print '----HEAD NOW FORWARD----'
+                #    setHeadAngle(HEAD_FORWARD)
+                #    MOVE_FORWARD = MOVE_FORWARD_FAST
+
+                #print 'x: ', x, ' left end:', left_foot_end
+                #if((x < left_foot_end and x > left_foot_start) and state == PREPARING_KICK):
+                #    print 'LEFT_FOOT_ALIGNED'
+                #    BALL_LOCATION = LEFT_FOOT_ALIGNED
 
 
 
@@ -407,12 +459,12 @@ if __name__ == "__main__":
     postureProxy.goToPosture("StandInit", 0.5)
 
     # Move to the ball, then back up slightly
-    tts.say("Stand back citizen! A ball needs to be kicked!")
+    #tts.say("Stand back citizen! A ball needs to be kicked!")
     # Example showing how to set angles, using a fraction of max speed
     
     setHeadAngle(HEAD_FORWARD)
     goalieKick()
 
-    postureProxy.goToPosture("Sit", 0.5)
+    postureProxy.goToPosture("Crouch", 0.5)
 
     camProxy.unsubscribe(videoClient)
